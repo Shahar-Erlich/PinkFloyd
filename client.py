@@ -21,3 +21,11 @@ option = ""
 while(option != "Exit"):
     option = input("Enter option\n")
     client_socket.send(option.encode('utf-8'))
+    if(option == "1"):
+        print(client_socket.recv(1024).decode('utf-8'))
+    else:
+        print(client_socket.recv(1024).decode('utf-8'))
+        inp = input()
+        client_socket.send(inp.encode('utf-8'))
+        print(client_socket.recv(1024).decode('utf-8'))
+
