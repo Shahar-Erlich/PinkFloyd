@@ -1,25 +1,31 @@
 import socket
 import data #import the txt parser
+import hashlib
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 ADDR = '127.0.0.1'
 PORT = 8820
 CONNECTION = (ADDR, PORT)
-
+HASH_PASS = "0c9420a304a2267b42962a958c95609d" #Bashed Password
 #Function that handles client/user inputs
+#check if user is still connected
+connected = True
 def handleClient():
     #While server is running
+    global connected
     while True:
         #Data sent from user
-        data = client_socket.recv(1024).decode('utf-8')
-        if not data:
-            break;
-        #if code is 8, disconnect  client socket
-        if data == '8':
-            client_socket.close()
-        else:
-            #call the function handle stored in the dictionary
-            functions[data]()
-        print("from connected user: " + str(data))
+        if connected:
+          data = client_socket.recv(1024).decode('utf-8')
+          if not data:
+                break;
+          #if code is 8, disconnect  client socket
+          if data == '8':
+               client_socket.close()
+               connected = False
+          else:
+             #call the function handle stored in the dictionary
+           functions[data]()
+           print("from connected user: " + str(data))
 
 #Get all albums
 def getAlbums():
@@ -85,8 +91,16 @@ if __name__ == "__main__":
     #wait to accept clients trying to connect
     (client_socket, client_address) = server_socket.accept()
 
+    #send password message to client
+    client_socket.send(f'Enter Password'.encode('utf-8'))
+    #loop and check each time if the client sent the correct password
+    while hashlib.md5(client_socket.recv(1024)).hexdigest() != HASH_PASS:
+        client_socket.send(f'Enter Password'.encode('utf-8'))
+
     print("Client Connected!")
+    connected = True
     #send welcome message to client
+    client_socket.send(f'Correct!'.encode('utf-8'))
     client_socket.send(f'Welcome {client_address}'.encode('utf-8'))
     #handle client
     handleClient()

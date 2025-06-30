@@ -9,6 +9,12 @@ client_socket = socket.socket()
 client_socket.connect(CONNECTION)
 #recieve welcome message and print
 data = client_socket.recv(1024).decode('utf-8')
+while data != "Correct!":
+    p = input("Enter password:\n")
+    client_socket.send(p.encode('utf-8'))
+    data = client_socket.recv(1024).decode('utf-8')
+print(data)
+data = client_socket.recv(1024).decode('utf-8')
 print(data)
 
 Instruction = ("1.ListAlbums - List all albums\n"
@@ -30,7 +36,7 @@ while(option != "8"):
     if(option == "1"):
         print(client_socket.recv(1024).decode('utf-8'))
     #if extra info needed after choosing (song name/album name) send the extra info and recieve final info
-    else:
+    elif int(option) != 8:
         print(client_socket.recv(1024).decode('utf-8'))
         inp = input()
         client_socket.send(inp.encode('utf-8'))
