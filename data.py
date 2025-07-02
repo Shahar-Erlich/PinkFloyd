@@ -30,6 +30,7 @@ def createDataBase():
           #if not new song or album concat lyric to previous song lyrics
           #Albums[lastAddedAlbum][0] is the dictionary of songs and [1] is release date
           ALBUMS[lastAddedAlbum][0][lastAddedSong][2]+=line
+    file.close()
 
 #return album dictionary
 def getAlbums():
