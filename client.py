@@ -11,6 +11,7 @@ class Client:
         initializes the client with a socket
         '''
         self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        #self.client_socket.setblocking(False)
     def print_options(self):
         '''
         Method that prints the instructions to the user

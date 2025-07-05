@@ -1,6 +1,8 @@
+import select
 import socket
 import data #import the txt parser
 import hashlib
+import selectors
 
 ADDR = '127.0.0.1'
 PORT = 8820
@@ -12,40 +14,48 @@ connected = True
 
 class Server:
     def __init__(self):
+        self.selector = selectors.DefaultSelector()
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    def handle_client(self,client_socket):
+        self.inputs = [self.server_socket]
+    def handle_client(self):
         '''function that handles user connections
            also receives the options from the users and returns the answers'''
-        global connected
-        while True:
-            #Data sent from user
-            if connected:
-              data = client_socket.recv(1024).decode('utf-8')
-              if not data:
-                    break;
-              #if code is 8, disconnect  client socket
-              if data == '8':
-                   client_socket.close()
-                   print("client disconnected")
-                   connected = False
-              else:
-                 #call the function handle stored in the dictionary
-               self.functions[data](client_socket)
-               print("from connected user: " + str(data))
+        while self.inputs:
+            readables,_,_ = select.select(self.inputs,[],[])
+            for i in readables:
+                if i is self.server_socket:
+                    client_socket,address = self.server_socket.accept()
+                    self.inputs.append(client_socket)
+                    self.connect_user(client_socket,address)
+                    client_socket.send(f"Welcome to server {address}!".encode())
+                    print("Client connected!")
+                else:
+                    try:
+                        data = i.recv(1024).decode('utf-8')
+                        self.functions[data](i)
+                        print(f"from {i}: " + str(data))
+
+                    except Exception as e:
+                        print(e)
+                        self.inputs.remove(i)
+                        print("Client Disconnected")
+                        i.close()
+
+
 
     def open_server(self):
         # Parse the text file to structs
         data.parse_text_file()
         # bind server to address/port
         self.server_socket.bind(CONNECTION)
+        print(f"[SERVER] Server binded to {CONNECTION}")
         # listen to client connections
         self.server_socket.listen()
+        print("[SERVER] Server listening to port")
+        self.handle_client()
         # wait to accept clients trying to connect
-        (client_socket, client_address) = self.server_socket.accept()
-        self.connect_user(client_socket,client_address)
 
     def connect_user(self,client_socket,client_address):
-        global connected
         client_socket.send(f'Enter Password'.encode('utf-8'))
         # loop and check each time if the client sent the correct password
         while hashlib.md5(client_socket.recv(1024)).hexdigest() != HASH_PASS:
@@ -56,7 +66,7 @@ class Server:
         client_socket.send(APPROVE_MESSAGE.encode('utf-8'))
         client_socket.send(f'Welcome {client_address}'.encode('utf-8'))
         # handle client
-        self.handle_client(client_socket)
+        self.handle_client()
 
     # Get all albums
     @staticmethod
